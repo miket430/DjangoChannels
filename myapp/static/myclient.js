@@ -104,7 +104,7 @@ function handleLogin(success) {
       
       //using Google public stun server 
       var configuration = { 
-         "iceServers": [{ "url": "stun:stun2.1.google.com:19302" }] 
+         "iceServers": [{ "urls": "stun:stun2.1.google.com:19302" }] 
       }; 
       
       yourConn = new RTCPeerConnection(configuration, {optional: [{RtpDataChannels: true}]}); 
