@@ -25,7 +25,13 @@ def ws_message(message):
 
 # Connected to websocket.disconnect
 def ws_disconnect(message):
-    Group("chat").discard(message.reply_channel)
+    connectedUsers.remove(users[hash(str(message.reply_channel))])
+    Group(users[hash(str(message.reply_channel))]).discard(message.reply_channel)
+    otherUser = connectedUsers.pop()
+    print 'Informing the other user: %s' % otherUser
+    jsonData = json.dumps({'type': 'leave'})
+    sendData(otherUser,jsonData)
+
 
 # Process and forwading information based on the message
 def redirectData(data,message):
@@ -34,28 +40,28 @@ def redirectData(data,message):
         print 'User is requesting to log in'
         # Inform user this name is already exist
         if data['name'] in users.values():
-            Group("%s" % data['name']).send({
-                    json.dumps({'type': "login",'success': False})
-                })
+            jsonData = json.dumps({'type': "login",'success': False})
+            sendData(data['name'],jsonData)
+
         # log user in and inform user 
         else:
             #users.append(data['name'])
             users[hash(str(message.reply_channel))] = data['name']
-            Group("%s" % data['name']).add(message.reply_channel)      
-            Group("%s" % data['name']).send({
-                    "text": json.dumps({'type': 'login','success': True})
-                })
+            Group(data['name']).add(message.reply_channel)
+            jsonData = json.dumps({'type': 'login','success': True})
+            sendData(data['name'],jsonData)      
             print "%s Added to Group" % data['name']
+
     # if the connection type is offer from user to another
     elif (data['type'] == "offer"):
         # If another user is logged in then forward this offer
         if data['name'] in users.values():
             print 'Forwarding offer to %s' % data['name']
-            Group("%s" % data['name']).send({
-                    "text": json.dumps({'type': 'offer',
+            jsonData = json.dumps({'type': 'offer',
                                         'offer': data['offer'],
                                         'name': users[hash(str(message.reply_channel))]})
-                })
+            sendData(data['name'],jsonData)
+
         # if another user is not found
         else:
             print '%s not found!' % data['name']
@@ -63,10 +69,10 @@ def redirectData(data,message):
     # if the connection type is answer, then forward it to another
     elif (data['type'] == "answer"):
         print 'Forwarding answer to: %s' % data['name']
-        Group("%s" % data['name']).send({
-                    "text": json.dumps({'type': 'answer',
+        jsonData = json.dumps({'type': 'answer',
                                         'answer': data['answer']})
-                })
+        sendData(data['name'],jsonData)
+
         # Add both users to the current connection list
         # the other user
         if data['name'] not in connectedUsers:
@@ -74,24 +80,24 @@ def redirectData(data,message):
         # the user who is sending this answer connection from
         if users[hash(str(message.reply_channel))]not in connectedUsers:
                 connectedUsers.append(users[hash(str(message.reply_channel))])
+
     # if the connection type is candidate then forward to another
     elif (data['type'] == "candidate"):
         print 'Forwarding candidate to: %s' % data['name']
         print 'From: %s' % users[hash(str(message.reply_channel))]
-        Group("%s" % data['name']).send({
-                    "text": json.dumps({'type': 'candidate',
+        jsonData = json.dumps({'type': 'candidate',
                                         'candidate': data['candidate']})
-                })
+        sendData(data['name'],jsonData)
 
     # if the an user is leaving then inform the other user
     elif (data['type'] == "leave"):
         print 'Disconnecting from: %s' % users[hash(str(message.reply_channel))]
         connectedUsers.remove(users[hash(str(message.reply_channel))])
-        otherUser = connectedUsers.pop(0)
+        otherUser = connectedUsers.pop()
         print 'Informing the other user: %s' % otherUser
-        Group("%s" % otherUser).send({
-                    "text": json.dumps({'type': 'leave'})
-                })
+        jsonData = json.dumps({'type': 'leave'})
+        sendData(other,jsonData)
+
         # if no user is in the connection session
         if len(connectedUsers) == 0:
             print "Connection is empty"
@@ -101,3 +107,8 @@ def redirectData(data,message):
                     "text": json.dumps({'type': 'error',
                                         'message': 'Error: unknown information'})                
             })
+
+def sendData(to,jsonData):
+    Group(to).send({
+            "text": jsonData
+        })
