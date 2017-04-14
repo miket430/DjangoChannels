@@ -107,7 +107,7 @@ function handleLogin(success) {
          "iceServers": [{ "urls": "stun:stun2.1.google.com:19302" }] 
       }; 
       
-      yourConn = new RTCPeerConnection(configuration, {optional: [{RtpDataChannels: true}]}); 
+      yourConn = new RTCPeerConnection(configuration); 
       
       // Setup ice handling 
       yourConn.onicecandidate = function (event) { 
