@@ -92,11 +92,14 @@ def redirectData(data,message):
     # if the an user is leaving then inform the other user
     elif (data['type'] == "leave"):
         print 'Disconnecting from: %s' % users[hash(str(message.reply_channel))]
-        connectedUsers.remove(users[hash(str(message.reply_channel))])
-        otherUser = connectedUsers.pop()
+        # remove the user from current connection list
+        if connectedUsers.size:
+            connectedUsers.remove(users[hash(str(message.reply_channel))])
+            # get the other user name 
+            otherUser = connectedUsers.pop()
         print 'Informing the other user: %s' % otherUser
         jsonData = json.dumps({'type': 'leave'})
-        sendData(other,jsonData)
+        sendData(otherUser,jsonData)
 
         # if no user is in the connection session
         if len(connectedUsers) == 0:
